@@ -1,0 +1,50 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# ---- Node / Next.js ----
+node_modules/
+.next/
+out/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---- 本地运行产物 ----
+.storage/
+logs/
+*.log
+celerybeat-schedule*
+dump.rdb
+
+# ---- 工具 / 编辑器 ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+.workbuddy/
+
+# ---- 旧版残留 ----
+.streamlit/
+secrets.toml
+temp_storage/
+temp/
+tmp/
+figures/
+dummy_resume.pdf
+./backend/.env.example

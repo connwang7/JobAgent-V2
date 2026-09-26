@@ -1,0 +1,118 @@
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: jobagent-root
+      MYSQL_DATABASE: jobagent
+      MYSQL_USER: jobagent
+      MYSQL_PASSWORD: jobagent
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pjobagent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    ports:
+      - "3306:3306"
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "6379:6379"
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    volumes:
+      - qdrant_data:/qdrant/storage
+    ports:
+      - "6333:6333"
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: ../docker/backend.Dockerfile
+    env_file: ../backend/.env
+    environment:
+      DATABASE_URL: mysql+asyncmy://jobagent:jobagent@mysql:3306/jobagent?charset=utf8mb4
+      CHECKPOINT_DB_URL: mysql://jobagent:jobagent@mysql:3306/jobagent
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      QDRANT_URL: http://qdrant:6333
+      STORAGE_BACKEND: minio
+      MINIO_ENDPOINT: minio:9000
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2"
+    depends_on:
+      mysql: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      qdrant: { condition: service_started }
+      minio: { condition: service_started }
+    expose:
+      - "8000"
+
+  worker:
+    build:
+      context: ../backend
+      dockerfile: ../docker/backend.Dockerfile
+    env_file: ../backend/.env
+    environment:
+      DATABASE_URL: mysql+asyncmy://jobagent:jobagent@mysql:3306/jobagent?charset=utf8mb4
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      QDRANT_URL: http://qdrant:6333
+      STORAGE_BACKEND: minio
+      MINIO_ENDPOINT: minio:9000
+    # 与 backend 共用同一镜像，入口不同（方案 10）
+    command: celery -A app.workers.celery_app.celery_app worker --loglevel=info --concurrency=4
+    depends_on:
+      mysql: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../docker/frontend.Dockerfile
+    environment:
+      NEXT_PUBLIC_API_BASE: /api/v1
+    expose:
+      - "3000"
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  mysql_data:
+  redis_data:
+  qdrant_data:
+  minio_data:

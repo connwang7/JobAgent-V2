@@ -1,0 +1,68 @@
+[project]
+name = "jobagent-backend"
+version = "2.0.0"
+description = "JobAgent v2 backend: FastAPI + LangGraph multi-agent + RAG matching"
+requires-python = ">=3.11"
+dependencies = [
+    # Web 框架
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "python-multipart>=0.0.9",
+    # 配置与校验
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    # 数据层
+    "sqlalchemy[asyncio]>=2.0.30",
+    "asyncmy>=0.2.9",
+    # langgraph-checkpoint-mysql 走 aiomysql；aiomysql 0.3.x 会 import
+    # pymysql.converters.escape_bytes_prefixed，而 PyMySQL >= 1.2 把它换成了
+    # 哨兵字符串 "DO NOT IMPORT THIS!!!"，导致 bytes 参数（checkpoint blob）
+    # 转义时抛 TypeError: 'str' object is not callable。
+    # 这里锁在 1.1.x；app/core/_compat.py 另有运行时兜底，双保险。
+    "aiomysql>=0.3,<0.4",
+    "PyMySQL>=1.1,<1.2",
+    "alembic>=1.13",
+    # 缓存 / 队列
+    "redis>=5.0",
+    "celery>=5.4",
+    # 认证与加密
+    "PyJWT>=2.8",
+    "bcrypt>=4.1",
+    "cryptography>=42.0",
+    # LLM / 智能体
+    "langchain-core>=0.3",
+    "langchain-openai>=0.2",
+    "langgraph>=0.2.60",
+    "langgraph-checkpoint-mysql>=0.1.2",
+    "langgraph-checkpoint-sqlite>=2.0.1",
+    # 向量库与 embedding
+    "qdrant-client>=1.11",
+    "httpx>=0.27",
+    # 对象存储
+    "minio>=7.2",
+    # 文档处理
+    "PyMuPDF>=1.24",
+    "python-docx>=1.1",
+    # 可观测性与健壮性
+    "structlog>=24.1",
+    "tenacity>=8.3",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "aiosqlite>=0.20",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

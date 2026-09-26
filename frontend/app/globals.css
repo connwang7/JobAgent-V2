@@ -1,0 +1,482 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   设计令牌
+   只在这里定义「昼夜会反转」的语义色；brand / accent 是固定值。
+   组件里一律用 surface-* / ink-* / tint*，不要在业务代码里写死颜色。
+   ============================================================ */
+:root {
+  color-scheme: light;
+
+  --ring: 99 102 241;                 /* brand-500 */
+
+  --c-surface-0: 255 255 255;         /* 卡片 / 最上层 */
+  --c-surface-50: 248 250 252;        /* 页面底色 */
+  --c-surface-100: 241 245 249;       /* 次级块 / hover */
+  --c-surface-200: 226 232 240;       /* 更深的分隔面 */
+
+  --c-ink-50: 248 250 252;
+  --c-ink-100: 241 245 249;
+  --c-ink-200: 226 232 240;           /* 常规边框 */
+  --c-ink-300: 203 213 225;           /* 强边框 / 占位 */
+  --c-ink-400: 148 163 184;           /* 最弱文字、eyebrow */
+  --c-ink-500: 100 116 139;           /* 次要文字 */
+  --c-ink-600: 71 85 105;
+  --c-ink-700: 51 65 85;
+  --c-ink-800: 30 41 59;              /* 正文 */
+  --c-ink-900: 15 23 42;              /* 标题 */
+
+  --c-tint: 238 242 255;              /* 淡品牌底（brand-50） */
+  --c-tint-2: 224 231 255;            /* hover 态淡底（brand-100） */
+  --c-tint-line: 224 231 255;         /* 淡底描边 */
+  --c-tint-fg: 67 56 202;             /* 淡底上的文字（brand-700） */
+
+  --grid-line: rgba(15, 23, 42, 0.045);
+  --scroll-thumb: #cbd5e1;
+  --scroll-thumb-hover: #94a3b8;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -14px rgba(15, 23, 42, 0.14);
+  --shadow-pop: 0 4px 12px -4px rgba(15, 23, 42, 0.10), 0 20px 44px -20px rgba(15, 23, 42, 0.22);
+  --shadow-inner-line: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --ring: 129 140 248;                /* brand-400，暗底上更亮 */
+
+  --c-surface-0: 24 30 41;
+  --c-surface-50: 13 17 23;
+  --c-surface-100: 31 39 52;
+  --c-surface-200: 42 52 68;
+
+  --c-ink-50: 16 21 28;
+  --c-ink-100: 30 38 51;
+  --c-ink-200: 46 56 73;              /* 常规边框 */
+  --c-ink-300: 64 76 96;
+  --c-ink-400: 122 137 158;
+  --c-ink-500: 148 163 184;
+  --c-ink-600: 176 189 207;
+  --c-ink-700: 203 213 225;
+  --c-ink-800: 226 232 240;           /* 正文 */
+  --c-ink-900: 241 245 249;           /* 标题 */
+
+  --c-tint: 41 47 84;
+  --c-tint-2: 54 62 105;
+  --c-tint-line: 72 80 128;
+  --c-tint-fg: 165 180 252;
+
+  --grid-line: rgba(148, 163, 184, 0.06);
+  --scroll-thumb: #37404e;
+  --scroll-thumb-hover: #4b566a;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.45), 0 10px 28px -16px rgba(0, 0, 0, 0.75);
+  --shadow-pop: 0 6px 16px -6px rgba(0, 0, 0, 0.55), 0 24px 48px -22px rgba(0, 0, 0, 0.85);
+  --shadow-inner-line: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-surface-50 text-ink-800 font-sans antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'tnum' 0;
+    transition: background-color 0.22s ease, color 0.22s ease;
+  }
+
+  ::selection {
+    @apply bg-brand-200 text-brand-900;
+  }
+  .dark ::selection {
+    background-color: rgb(99 102 241 / 0.35);
+    color: rgb(224 231 255);
+  }
+
+  /* 统一焦点环 */
+  :focus-visible {
+    outline: 2px solid rgb(var(--ring) / 0.5);
+    outline-offset: 2px;
+  }
+
+  /* 细滚动条 */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--scroll-thumb);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scroll-thumb-hover);
+    background-clip: content-box;
+  }
+
+  /* 原生表单控件的暗色适配 */
+  .dark input,
+  .dark textarea,
+  .dark select {
+    color-scheme: dark;
+  }
+}
+
+/* ============================================================
+   组件类
+   ============================================================ */
+@layer components {
+  .card {
+    @apply bg-surface-0 rounded-2xl border border-ink-200/80 shadow-card;
+  }
+
+  .card-flat {
+    @apply bg-surface-0 rounded-2xl border border-ink-200/70;
+  }
+
+  .card-hover {
+    @apply transition-all duration-200 ease-smooth hover:shadow-pop hover:border-brand-300;
+  }
+
+  /* ---------- 按钮 ---------- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl
+           text-sm font-medium text-white bg-brand-500
+           shadow-[0_1px_2px_rgba(15,23,42,0.08)]
+           transition-all duration-150 ease-smooth
+           hover:bg-brand-600 active:scale-[0.985]
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-grad {
+    @apply inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl
+           text-sm font-medium text-white
+           bg-gradient-to-r from-brand-600 to-accent-600
+           shadow-glow transition-all duration-150 ease-smooth
+           hover:brightness-[1.06] active:scale-[0.985]
+           disabled:opacity-50 disabled:pointer-events-none disabled:shadow-none;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl
+           border border-ink-200 bg-surface-0 text-ink-700 text-sm font-medium
+           transition-all duration-150 ease-smooth
+           hover:bg-surface-100 hover:border-ink-300 active:scale-[0.985]
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-soft {
+    @apply inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl
+           bg-tint text-tint-fg text-sm font-medium border border-tint-line
+           transition-all duration-150 ease-smooth
+           hover:bg-tint-2 active:scale-[0.985]
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl
+           border border-rose-200 bg-surface-0 text-rose-600 text-sm font-medium
+           transition-colors duration-150
+           hover:bg-rose-50 active:scale-[0.985]
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-icon {
+    @apply inline-flex items-center justify-center w-9 h-9 rounded-xl
+           text-ink-500 transition-all duration-150 ease-smooth
+           hover:bg-surface-100 hover:text-ink-800 active:scale-95
+           disabled:opacity-40 disabled:pointer-events-none;
+  }
+
+  /* ---------- 表单 ---------- */
+  .input {
+    @apply w-full px-3.5 py-2.5 rounded-xl border border-ink-200 bg-surface-0
+           text-sm text-ink-800 placeholder:text-ink-400
+           transition-all duration-150 ease-smooth
+           hover:border-ink-300
+           focus:outline-none focus:border-brand-400
+           focus:ring-4 focus:ring-brand-500/10
+           disabled:bg-surface-100 disabled:text-ink-400;
+  }
+
+  .input-sm {
+    @apply px-3 py-1.5 rounded-lg text-sm;
+  }
+
+  .label {
+    @apply block text-xs font-medium text-ink-600 mb-1.5;
+  }
+
+  .label-hint {
+    @apply text-[12.5px] font-normal text-ink-400;
+  }
+
+  /* ---------- 徽标 / 标签 ---------- */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full
+           text-[12.5px] font-medium border;
+  }
+
+  .badge-on {
+    @apply bg-emerald-50 text-emerald-700 border-emerald-200;
+  }
+
+  .badge-off {
+    @apply bg-surface-100 text-ink-500 border-ink-200;
+  }
+
+  .badge-info {
+    @apply bg-tint text-tint-fg border-tint-line;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full
+           text-xs font-medium border border-ink-200 bg-surface-0 text-ink-600
+           transition-all duration-150 ease-smooth
+           hover:border-brand-300 hover:text-brand-600 hover:bg-tint
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .chip-active {
+    @apply border-brand-400 bg-tint text-tint-fg
+           shadow-[0_0_0_3px_rgba(99,102,241,0.10)];
+  }
+
+  /* ---------- 分区标题 ---------- */
+  .section-title {
+    @apply text-sm font-semibold text-ink-800 tracking-tight;
+  }
+
+  .eyebrow {
+    @apply text-[12.5px] font-semibold uppercase tracking-[0.14em] text-ink-400;
+  }
+}
+
+/* ============================================================
+   工具类
+   ============================================================ */
+@layer utilities {
+  .gradient-text {
+    @apply bg-gradient-to-r from-brand-600 via-accent-600 to-brand-600
+           bg-clip-text text-transparent;
+  }
+  .dark .gradient-text {
+    @apply from-brand-400 via-accent-400 to-brand-400;
+  }
+
+  .glow-grid {
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* 「模型正在思考」的流光文字 */
+  .thinking-sheen {
+    background: linear-gradient(
+      90deg,
+      rgb(148 163 184) 0%,
+      rgb(99 102 241) 25%,
+      rgb(139 92 246) 50%,
+      rgb(99 102 241) 75%,
+      rgb(148 163 184) 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: sheen 3.2s linear infinite;
+  }
+  .dark .thinking-sheen {
+    background: linear-gradient(
+      90deg,
+      rgb(100 116 139) 0%,
+      rgb(129 140 248) 25%,
+      rgb(167 139 250) 50%,
+      rgb(129 140 248) 75%,
+      rgb(100 116 139) 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: sheen 3.2s linear infinite;
+  }
+}
+
+/* ============================================================
+   Markdown 正文排版（替代 typography 插件，避免额外依赖）
+   ============================================================ */
+.md {
+  @apply text-[16px] leading-[1.75] text-ink-800 break-words;
+}
+.md > *:first-child { margin-top: 0 !important; }
+.md > *:last-child { margin-bottom: 0 !important; }
+
+.md p { margin: 0.6em 0; }
+.md h1, .md h2, .md h3, .md h4 {
+  @apply font-semibold text-ink-900 tracking-tight;
+  margin: 1.15em 0 0.5em;
+  line-height: 1.35;
+}
+.md h1 { font-size: 1.3em; }
+.md h2 { font-size: 1.15em; }
+.md h3 { font-size: 1.03em; }
+.md h4 { font-size: 0.97em; }
+
+.md ul, .md ol { margin: 0.6em 0; padding-left: 1.35em; }
+.md ul { list-style: disc; }
+.md ol { list-style: decimal; }
+.md li { margin: 0.3em 0; }
+.md li::marker { @apply text-ink-400; }
+.md li > ul, .md li > ol { margin: 0.3em 0; }
+
+.md a {
+  @apply text-brand-600 font-medium underline decoration-brand-300 underline-offset-2;
+}
+.md a:hover { @apply decoration-brand-500 text-brand-700; }
+.dark .md a { @apply text-brand-400 decoration-brand-400/60; }
+.dark .md a:hover { @apply text-brand-300 decoration-brand-300; }
+
+.md strong { @apply font-semibold text-ink-900; }
+.md em { @apply italic; }
+.md hr { @apply border-ink-200 my-4; }
+
+.md blockquote {
+  @apply border-l-[3px] border-brand-400 bg-tint text-ink-600
+         rounded-r-lg py-1.5 pl-3.5 my-3;
+}
+.md blockquote p { margin: 0.25em 0; }
+
+.md code {
+  @apply font-mono text-[0.88em] px-1.5 py-0.5 rounded-md
+         bg-surface-100 text-tint-fg border border-ink-200/70;
+}
+.md pre {
+  @apply rounded-xl p-3.5 my-3 overflow-x-auto
+         text-[14px] leading-relaxed;
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+.md pre code {
+  @apply bg-transparent border-0 p-0 text-inherit text-[14px];
+}
+
+.md table {
+  @apply w-full text-[15px] my-3 border border-ink-200 rounded-lg overflow-hidden;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.md thead { @apply bg-surface-100; }
+.md th {
+  @apply text-left font-semibold text-ink-700 px-3 py-2 border-b border-ink-200;
+}
+.md td { @apply px-3 py-2 border-b border-ink-100 text-ink-700 align-top; }
+.md tbody tr:last-child td { border-bottom: 0; }
+.md tbody tr:hover { @apply bg-surface-50; }
+
+/* 流式输出光标 */
+.caret::after {
+  content: '';
+  display: inline-block;
+  width: 0.5em;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: -0.16em;
+  border-radius: 1px;
+  background: linear-gradient(180deg, #6366f1, #8b5cf6);
+  animation: blink 1s step-end infinite;
+}
+
+/* 顶部渐变细线（用于卡片强调） */
+.top-accent {
+  position: relative;
+}
+.top-accent::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: linear-gradient(90deg, #6366f1, #a855f7, #6366f1);
+}
+
+/* ============================================================
+   CSS 专用关键帧（不依赖 animation 工具类，确保始终被输出）
+   ============================================================ */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.55; transform: scale(0.96); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes sheen {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+.animate-breathe {
+  animation: breathe 2s ease-in-out infinite;
+}
+
+.animate-slide-down {
+  animation: slide-down 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* 思考块内文字：略小、行距舒展，滚动时更耐看 */
+.thinking-text {
+  @apply text-[15px] leading-[1.75] text-ink-500 whitespace-pre-wrap break-words;
+}
+
+/* ============================================================
+   语义色的暗色补偿
+   这些色只用于「状态色」（成功/警告/危险/信息），本身依赖色相而非明度，
+   所以在暗色下需要把浅底换成同色系深底、深字换成浅字。
+   ============================================================ */
+.dark .badge-on {
+  background-color: rgb(6 78 59 / 0.35);
+  color: rgb(110 231 183);
+  border-color: rgb(6 95 70 / 0.7);
+}
+.dark .btn-danger {
+  @apply bg-surface-0 border-rose-900/70;
+  color: rgb(253 164 175);
+}
+.dark .btn-danger:hover {
+  background-color: rgb(76 5 25 / 0.55);
+}
+
+/* 状态色容器（浅色底 + 深色字）的暗色翻转 */
+.dark .surface-emerald { background-color: rgb(6 78 59 / 0.28) !important; border-color: rgb(6 95 70 / 0.5) !important; }
+.dark .surface-amber   { background-color: rgb(120 53 15 / 0.30) !important; border-color: rgb(146 64 14 / 0.5) !important; }
+.dark .surface-rose    { background-color: rgb(76 5 25 / 0.35) !important; border-color: rgb(159 18 57 / 0.5) !important; }
+.dark .surface-sky     { background-color: rgb(12 74 110 / 0.32) !important; border-color: rgb(3 105 161 / 0.5) !important; }
+.dark .surface-violet  { background-color: rgb(76 29 149 / 0.30) !important; border-color: rgb(109 40 217 / 0.5) !important; }
