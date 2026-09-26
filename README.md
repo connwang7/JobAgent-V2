@@ -201,22 +201,3 @@ frontend/
 ├── components/         内联 SVG 图标集 / 思考面板 / 计划视图 / 确认卡片
 └── lib/                api（统一超时 + envelope）/ sse / store / theme / format / auth
 ```
-
-## 🧪 测试与验证
-
-```bash
-cd backend && pytest -q    # ✅ 单测不依赖 MySQL / Redis / MinIO（SQLite + 本地存储）
-```
-
-| 测试 | 覆盖 |
-|------|------|
-| 🧩 `test_dispatch.py` | 任务分发：broker 不可达必须快速返回、绝不调 `delay()`、降级任务真的执行 |
-| 📄 `test_resume_lifecycle.py` | 简历删除 / 清空 / 上传校验 / 派发竞态 |
-| 🔐 `test_security.py` · 🗺️ `test_planner.py` · 📊 `test_scorer.py` · 🕸️ `test_graph_compile.py` | 加密、Planner 解析、匹配打分、图编译 |
-
-端到端自检（真起服务、真连 MySQL）：
-
-```bash
-cd backend && PYTHONIOENCODING=utf-8 python -X utf8 scripts/verify_resume_lifecycle.py
-```
-
