@@ -220,22 +220,3 @@ cd backend && pytest -q    # ✅ 单测不依赖 MySQL / Redis / MinIO（SQLite 
 cd backend && PYTHONIOENCODING=utf-8 python -X utf8 scripts/verify_resume_lifecycle.py
 ```
 
-## ⚠️ 已知坑（换机器 / 换库时注意）
-
-| 现象 | 原因 | 处理 |
-|------|------|------|
-| 对话报 `Illegal mix of collations` | langgraph-checkpoint-mysql 的 SQL 未写 COLLATE，落在 MySQL 8 默认 `utf8mb4_0900_ai_ci`，与 `utf8mb4_unicode_ci` 库冲突 | 建库用 `utf8mb4_0900_ai_ci`；已有库可 `ALTER ... CONVERT TO` |
-| 对话报 `'str' object is not callable`（checkpoint 写入） | PyMySQL ≥ 1.2 移除了 aiomysql 0.3.x 依赖的 `escape_bytes_prefixed` | 锁 `PyMySQL>=1.1,<1.2`；`core/_compat.py` 有运行时兜底 |
-| 结构化输出抛 `list[...] is not a module...` | `with_structured_output(list[X])` 的裸泛型被当成函数处理 | 用具名 `BaseModel` 包住列表，**永远不要传裸 `list[X]` / `dict[...]`** |
-| 配置"写了却不生效" | `env_file=".env"` 按 CWD 解析，仓库根目录残留 `.env` 会被优先读到 | 配置只放 `backend/.env`，启动前先 `cd backend` |
-| 对话历史时间早 8 小时 | 后端存 naive UTC，浏览器当本地时间解析 | 前端一律用 `lib/format.ts` 的 `parseServerTime()` / `formatDateTime()` |
-| 回答整段蹦出、没有流式 | `ChatOpenAI` 默认 `streaming=False` | 输出型节点（synthesizer / ChatBot）显式 `streaming=True` |
-| 深度思考开关没反应 | `langchain_openai` 丢弃非标准 `reasoning_content` | 用 `ChatOpenAIWithReasoning`，**不要改回裸 `ChatOpenAI`** |
-| 上传简历全站一起卡 ~108s | 无 Redis 时 `delay()` 同步阻塞重连 broker，冻住事件循环 | `dispatch.py` 已改为 async + TCP 预检，不可达直接 inline 降级（108s → 1.2s） |
-| 简历停在「解析中」 | inline 任务随服务重启被取消，残留 `pending/parsing` | 启动时 `workers/reconcile.py` 把超 10 分钟的残留标为 `failed`，前端可一键重解析 |
-| `next build` 报 `EPERM ... .next\trace` | 构建 worker 打不开性能追踪文件 | 用 `frontend/scripts/build.sh`（`NODE_OPTIONS` 屏蔽 `.next/trace`） |
-| 上传后停在「排队中」 | 派发解析任务时事务未提交，inline 任务读到"行不存在" | `upload()` 在派发前显式 `commit()` |
-
-> 排查"对话没反应"：先看 `logs/backend.log` 的 `run_failed`（带完整 traceback），
-> 再到「设置 → 大模型接入 → 测试连接」确认 Key / Base URL / 模型名。
-
