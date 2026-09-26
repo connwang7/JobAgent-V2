@@ -45,6 +45,5 @@ secrets.toml
 temp_storage/
 temp/
 tmp/
-figures/
 dummy_resume.pdf
 ./backend/.env.example
